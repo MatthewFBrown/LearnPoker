@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { HandMatrix } from '../../components/poker/HandMatrix'
 import { getRange, getPositions, HANDS_BY_STRENGTH, parseRangeNotation } from '../../data/ranges'
-import { runEquityVsRange, makeDeck, cardId, RANK_CHARS, type Card } from '../../utils/handEvaluator'
+import { runEquityVsRange, cardId, RANK_CHARS, type Card } from '../../utils/handEvaluator'
 import type { Position, GameType } from '../../types/poker'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
