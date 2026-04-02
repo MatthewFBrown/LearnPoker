@@ -1,13 +1,15 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutGrid, Calculator, BarChart2, BookOpen, Percent, Swords } from 'lucide-react'
+import { LayoutGrid, Calculator, BarChart2, BookOpen, Percent, Swords, Target, Scale } from 'lucide-react'
 
 const links = [
-  { to: '/',         label: 'Range Trainer',  icon: LayoutGrid },
-  { to: '/equity',   label: 'Equity Calc',    icon: Percent    },
-  { to: '/vs-range', label: 'Hand vs Range',  icon: Swords     },
-  { to: '/math',     label: 'Poker Math',     icon: Calculator },
-  { to: '/sessions', label: 'Session Log',    icon: BarChart2  },
-  { to: '/study',    label: 'Study Hub',      icon: BookOpen   },
+  { to: '/',          label: 'Range Trainer',      icon: LayoutGrid },
+  { to: '/equity',    label: 'Equity Calc',         icon: Percent    },
+  { to: '/vs-range',  label: 'Hand vs Range',       icon: Swords     },
+  { to: '/pos-equity',label: 'Equity by Position',  icon: Target     },
+  { to: '/rvr',       label: 'Range vs Range',      icon: Scale      },
+  { to: '/math',      label: 'Poker Math',          icon: Calculator },
+  { to: '/sessions',  label: 'Session Log',         icon: BarChart2  },
+  { to: '/study',     label: 'Study Hub',           icon: BookOpen   },
 ]
 
 export function Sidebar() {

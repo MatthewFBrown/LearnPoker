@@ -195,3 +195,57 @@ export function runEquityVsRange(
   const heroEq = (heroWins + heroTies * 0.5) / iterations
   return { hero: heroEq, opp: 1 - heroEq }
 }
+
+// ── Range vs Range ────────────────────────────────────────────────────────────
+
+/** Monte Carlo equity: two full ranges against each other */
+export function runRangeVsRange(
+  range1: string[],
+  range2: string[],
+  board: Card[],
+  iterations = 50000,
+): RangeEquityResult {
+  const boardKeys = new Set(board.map(cardId))
+
+  const combos1 = range1.flatMap(h =>
+    expandCombo(h).filter(([c1, c2]) => !boardKeys.has(cardId(c1)) && !boardKeys.has(cardId(c2)))
+  )
+  const combos2 = range2.flatMap(h =>
+    expandCombo(h).filter(([c1, c2]) => !boardKeys.has(cardId(c1)) && !boardKeys.has(cardId(c2)))
+  )
+
+  if (!combos1.length || !combos2.length) return { hero: 0, opp: 0 }
+
+  const needed = 5 - board.length
+  let wins1 = 0, ties = 0, total = 0
+
+  for (let i = 0; i < iterations; i++) {
+    const [c1a, c1b] = combos1[Math.floor(Math.random() * combos1.length)]
+    const r1Keys = new Set([cardId(c1a), cardId(c1b)])
+
+    const avail2 = combos2.filter(([c, d]) => !r1Keys.has(cardId(c)) && !r1Keys.has(cardId(d)))
+    if (!avail2.length) continue
+
+    const [c2a, c2b] = avail2[Math.floor(Math.random() * avail2.length)]
+    const r2Keys = new Set([cardId(c2a), cardId(c2b)])
+
+    const deck = makeDeck().filter(c =>
+      !boardKeys.has(cardId(c)) && !r1Keys.has(cardId(c)) && !r2Keys.has(cardId(c))
+    )
+    for (let j = 0; j < needed; j++) {
+      const k = j + Math.floor(Math.random() * (deck.length - j))
+      const tmp = deck[j]; deck[j] = deck[k]; deck[k] = tmp
+    }
+    const fullBoard = [...board, ...deck.slice(0, needed)]
+    const s1 = bestOf7([c1a, c1b], fullBoard)
+    const s2 = bestOf7([c2a, c2b], fullBoard)
+
+    if (s1 > s2) wins1++
+    else if (s1 === s2) ties++
+    total++
+  }
+
+  if (total === 0) return { hero: 0, opp: 0 }
+  const eq1 = (wins1 + ties * 0.5) / total
+  return { hero: eq1, opp: 1 - eq1 }
+}

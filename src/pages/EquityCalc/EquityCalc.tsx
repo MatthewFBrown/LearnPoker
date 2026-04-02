@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { runEquity, makeDeck, cardId, RANK_CHARS, type Card, type EquityResult } from '../../utils/handEvaluator'
+import { potOddsEquity, evCall, spr, sprLabel } from '../../utils/pokerMath'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -278,6 +279,142 @@ function CardPicker({ usedKeys, onPick }: PickerProps) {
   )
 }
 
+// ── Stack size analysis ───────────────────────────────────────────────────────
+
+function NumInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label className="block text-xs text-gray-400 mb-1">{label}</label>
+      <input
+        type="number"
+        min={0}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 text-sm focus:outline-none focus:border-blue-500"
+      />
+    </div>
+  )
+}
+
+interface StackSizePanelProps {
+  equity: number
+  pot: string;      setPot: (v: string) => void
+  effStack: string; setEffStack: (v: string) => void
+  betSize: string;  setBetSize: (v: string) => void
+  viewAsP2: boolean; setViewAsP2: (v: boolean) => void
+}
+
+function StackSizePanel({ equity, pot, setPot, effStack, setEffStack, betSize, setBetSize, viewAsP2, setViewAsP2 }: StackSizePanelProps) {
+  const p   = Math.max(0, +pot)
+  const s   = Math.max(0, +effStack)
+  const b   = Math.max(0, +betSize)
+
+  const sprValue    = spr(s, p)
+  const sprText     = sprLabel(sprValue)
+  const breakEven   = b > 0 ? potOddsEquity(p, b) : null
+  const callEV      = b > 0 ? evCall(equity, p + b, b) : null
+  const allinEV     = s > 0 ? evCall(equity, p + s, s) : null
+
+  const equityPct = (equity * 100).toFixed(1)
+
+  return (
+    <div className="bg-gray-900 rounded-b-2xl border border-t-0 border-gray-800 p-5">
+      {/* P1 / P2 toggle */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs text-gray-500 uppercase tracking-wide">Analysing</p>
+        <div className="flex gap-1">
+          {['P1', 'P2'].map((label, i) => (
+            <button
+              key={label}
+              onClick={() => setViewAsP2(i === 1)}
+              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                viewAsP2 === (i === 1)
+                  ? i === 0 ? 'bg-blue-700 text-white' : 'bg-orange-700 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:text-gray-100'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Inputs */}
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        <NumInput label="Pot ($)"              value={pot}      onChange={setPot}      />
+        <NumInput label="Effective stack ($)"  value={effStack} onChange={setEffStack} />
+        <NumInput label="Bet / all-in ($)"     value={betSize}  onChange={setBetSize}  />
+      </div>
+
+      {/* Output cards */}
+      <div className="grid grid-cols-2 gap-3">
+
+        {/* SPR */}
+        <div className="bg-gray-800 rounded-xl p-4 text-center">
+          <p className="text-xs text-gray-500 mb-1">SPR</p>
+          <p className="text-2xl font-bold font-mono text-purple-400">
+            {sprValue === Infinity ? '∞' : sprValue.toFixed(1)}
+          </p>
+          <p className="text-xs text-gray-400 mt-1 leading-snug">{sprText}</p>
+        </div>
+
+        {/* Break-even equity */}
+        <div className="bg-gray-800 rounded-xl p-4 text-center">
+          <p className="text-xs text-gray-500 mb-1">Break-even equity</p>
+          {breakEven !== null ? (
+            <>
+              <p className={`text-2xl font-bold font-mono ${equity >= breakEven ? 'text-green-400' : 'text-red-400'}`}>
+                {(breakEven * 100).toFixed(1)}%
+              </p>
+              <p className={`text-xs mt-1 ${equity >= breakEven ? 'text-green-600' : 'text-red-600'}`}>
+                Your equity {equityPct}% — {equity >= breakEven ? 'above' : 'below'} threshold
+              </p>
+            </>
+          ) : (
+            <p className="text-gray-600 text-sm mt-2">Enter a bet size</p>
+          )}
+        </div>
+
+        {/* Call EV */}
+        <div className="bg-gray-800 rounded-xl p-4 text-center">
+          <p className="text-xs text-gray-500 mb-1">Call EV</p>
+          {callEV !== null ? (
+            <>
+              <p className={`text-2xl font-bold font-mono ${callEV >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {callEV >= 0 ? '+' : ''}{callEV.toFixed(1)}
+              </p>
+              <p className={`text-xs mt-1 ${callEV >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {callEV >= 0 ? 'Calling is profitable' : 'Fold has better EV'}
+              </p>
+            </>
+          ) : (
+            <p className="text-gray-600 text-sm mt-2">Enter a bet size</p>
+          )}
+        </div>
+
+        {/* All-in EV */}
+        {allinEV !== null ? (
+          <div className="bg-gray-800 rounded-xl p-4 text-center">
+            <p className="text-xs text-gray-500 mb-1">All-in EV (shove)</p>
+            <p className={`text-2xl font-bold font-mono ${allinEV >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {allinEV >= 0 ? '+' : ''}{allinEV.toFixed(1)}
+            </p>
+            <p className={`text-xs mt-1 ${allinEV >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {allinEV >= 0 ? 'Shoving is profitable' : 'Avoid the shove'}
+            </p>
+          </div>
+        ) : (
+          <div className="bg-gray-800 rounded-xl p-4 text-center">
+            <p className="text-xs text-gray-500 mb-1">All-in EV (shove)</p>
+            <p className="text-gray-600 text-sm mt-2">Enter a stack size</p>
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 type Hands = (Card | null)[][]
@@ -292,6 +429,13 @@ export function EquityCalc() {
   const [results, setResults] = useState<EquityResult[] | null>(null)
   const [running, setRunning] = useState(false)
   const [iterations, setIterations] = useState(50_000)
+
+  // Stack size analysis
+  const [stackOpen, setStackOpen] = useState(false)
+  const [pot,       setPot]       = useState('100')
+  const [effStack,  setEffStack]  = useState('200')
+  const [betSize,   setBetSize]   = useState('100')
+  const [viewAsP2,  setViewAsP2]  = useState(false)
 
   const usedKeys = new Set<number>([
     ...hands.flat().filter(Boolean).map(c => cardId(c!)),
@@ -480,6 +624,28 @@ export function EquityCalc() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Stack size analysis toggle */}
+      {results && (
+        <div className="mb-6">
+          <button
+            onClick={() => setStackOpen(o => !o)}
+            className="w-full flex items-center justify-between px-5 py-3 bg-gray-900 rounded-2xl border border-gray-800 hover:border-gray-600 transition-colors"
+          >
+            <span className="text-sm font-medium text-gray-300">Stack Size Analysis</span>
+            <span className="text-xs text-gray-500">{stackOpen ? 'Hide ▴' : 'Show ▾'}</span>
+          </button>
+          {stackOpen && (
+            <StackSizePanel
+              equity={results[viewAsP2 ? 1 : 0].equity}
+              pot={pot}       setPot={setPot}
+              effStack={effStack} setEffStack={setEffStack}
+              betSize={betSize}   setBetSize={setBetSize}
+              viewAsP2={viewAsP2} setViewAsP2={setViewAsP2}
+            />
+          )}
         </div>
       )}
 

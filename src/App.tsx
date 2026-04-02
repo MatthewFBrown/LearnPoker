@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
-import { LayoutGrid, Calculator, BarChart2, BookOpen, Percent, Swords } from 'lucide-react'
+import { LayoutGrid, Calculator, BarChart2, BookOpen, Percent, Swords, Target, Scale } from 'lucide-react'
 import { Sidebar } from './components/layout/Sidebar'
 import { RangeTrainer } from './pages/RangeTrainer/RangeTrainer'
 import { MathTools } from './pages/MathTools/MathTools'
@@ -7,14 +7,18 @@ import { SessionTracker } from './pages/SessionTracker/SessionTracker'
 import { StudyHub } from './pages/StudyHub/StudyHub'
 import { EquityCalc } from './pages/EquityCalc/EquityCalc'
 import { HandVsRange } from './pages/HandVsRange/HandVsRange'
+import { EquityByPosition } from './pages/EquityByPosition/EquityByPosition'
+import { RangeVsRange } from './pages/RangeVsRange/RangeVsRange'
 
 const NAV_LINKS = [
-  { to: '/',         label: 'Ranges',   icon: LayoutGrid },
-  { to: '/equity',   label: 'Equity',   icon: Percent    },
-  { to: '/vs-range', label: 'Vs Range', icon: Swords     },
-  { to: '/math',     label: 'Math',     icon: Calculator },
-  { to: '/sessions', label: 'Sessions', icon: BarChart2  },
-  { to: '/study',    label: 'Study',    icon: BookOpen   },
+  { to: '/',          label: 'Ranges',   icon: LayoutGrid },
+  { to: '/equity',    label: 'Equity',   icon: Percent    },
+  { to: '/vs-range',  label: 'Vs Range', icon: Swords     },
+  { to: '/pos-equity',label: 'By Pos',   icon: Target     },
+  { to: '/rvr',       label: 'RvR',      icon: Scale      },
+  { to: '/math',      label: 'Math',     icon: Calculator },
+  { to: '/sessions',  label: 'Sessions', icon: BarChart2  },
+  { to: '/study',     label: 'Study',    icon: BookOpen   },
 ]
 
 export default function App() {
@@ -29,7 +33,9 @@ export default function App() {
             <Route path="/sessions" element={<SessionTracker />} />
             <Route path="/study"    element={<StudyHub />} />
             <Route path="/equity"   element={<EquityCalc />} />
-            <Route path="/vs-range" element={<HandVsRange />} />
+            <Route path="/vs-range"  element={<HandVsRange />} />
+            <Route path="/pos-equity" element={<EquityByPosition />} />
+            <Route path="/rvr"        element={<RangeVsRange />} />
           </Routes>
         </main>
       </div>

@@ -26,35 +26,33 @@ export function HandMatrix({ highlighted, activeHand, onCellClick, compact }: Ha
     return 'bg-gray-900 text-gray-400 hover:bg-gray-800'
   }
 
-  // Responsive sizing:
-  // compact prop  → always small (used elsewhere, e.g. overview thumbnails)
-  // normal mode   → w-6 h-6 with no margin on mobile, w-9 h-9 with m-px on sm+
-  const cellSize    = compact ? 'w-6 h-6 text-[8px]'        : 'w-[26px] h-[26px] sm:w-9 sm:h-9'
+  const cellSize    = compact ? 'w-8 h-8'                    : 'w-[26px] h-[26px] sm:w-9 sm:h-9'
   const cellMargin  = compact ? 'm-px'                       : 'sm:m-px'
-  const rowHdrClass = compact ? 'w-6 text-[10px]'           : 'w-[26px] text-[9px] sm:w-7 sm:text-xs'
-  const colHdrClass = compact ? 'w-6'                        : 'w-[26px] sm:w-9'
-  const headerMl    = compact ? 'ml-7'                       : 'ml-[26px] sm:ml-7'
+  const rowHdrClass = 'w-[26px] text-[9px] sm:w-7 sm:text-xs'
+  const colHdrClass = 'w-[26px] sm:w-9'
+  const headerMl    = 'ml-[26px] sm:ml-7'
 
   return (
     <div className="inline-block">
-      {/* Column headers */}
-      <div className={`flex ${headerMl}`}>
-        {RANKS.map((r) => (
-          <div
-            key={r}
-            className={`${colHdrClass} text-center text-[10px] text-gray-500 mb-0.5 font-mono`}
-          >
-            {r}
-          </div>
-        ))}
-      </div>
+      {/* Column headers — hidden in compact */}
+      {!compact && (
+        <div className={`flex ${headerMl}`}>
+          {RANKS.map((r) => (
+            <div key={r} className={`${colHdrClass} text-center text-[10px] text-gray-500 mb-0.5 font-mono`}>
+              {r}
+            </div>
+          ))}
+        </div>
+      )}
 
       {RANKS.map((rowRank, row) => (
         <div key={rowRank} className="flex items-center">
-          {/* Row header */}
-          <div className={`${rowHdrClass} text-gray-500 font-mono text-right pr-1`}>
-            {rowRank}
-          </div>
+          {/* Row header — hidden in compact */}
+          {!compact && (
+            <div className={`${rowHdrClass} text-gray-500 font-mono text-right pr-1`}>
+              {rowRank}
+            </div>
+          )}
 
           {RANKS.map((_colRank, col) => {
             const hand = getHandCombo(row, col)
@@ -71,12 +69,9 @@ export function HandMatrix({ highlighted, activeHand, onCellClick, compact }: Ha
                   leading-none
                 `}
               >
-                {/* Text: tiny on mobile, normal on sm+; hidden in compact */}
-                {!compact && (
-                  <span className="text-[7px] sm:text-[10px] leading-none">
-                    {hand.length <= 3 ? hand : hand.slice(0, 3)}
-                  </span>
-                )}
+                <span className={`${compact ? 'text-[9px]' : 'text-[7px] sm:text-[10px]'} leading-none`}>
+                  {hand.length <= 3 ? hand : hand.slice(0, 3)}
+                </span>
               </button>
             )
           })}

@@ -3,9 +3,10 @@ import { HandMatrix } from '../../components/poker/HandMatrix'
 import { PlayingCard, parseHandCards } from '../../components/poker/PlayingCard'
 import { getRange, getPositions, ALL_COMBOS } from '../../data/ranges'
 import { useProgressStore } from '../../store/progressStore'
-import type { Position, GameType, Action } from '../../types/poker'
+import { useRangeStore } from '../../store/rangeStore'
+import type { Position, GameType, Action, HandCombo } from '../../types/poker'
 
-type Mode = 'view' | 'quiz'
+type Mode = 'view' | 'edit' | 'quiz'
 
 const GAME_LABELS: Record<GameType, string> = {
   '6max': '6-Max',
@@ -23,9 +24,22 @@ export function RangeTrainer() {
   const [streak, setStreak] = useState(0)
 
   const { addResult, getStats } = useProgressStore()
+  const { getCustomRange, setCustomRange, resetRange, hasCustomRange } = useRangeStore()
+
   const stats = getStats(position, gameType)
   const positions = getPositions(gameType)
-  const range = getRange(gameType, position)
+  const defaultRange = getRange(gameType, position)
+  const customHands = getCustomRange(gameType, position)
+  const range: Set<HandCombo> = customHands ? new Set(customHands) : defaultRange
+  const isCustomized = hasCustomRange(gameType, position)
+
+  function handleCellClick(hand: HandCombo) {
+    if (mode !== 'edit') return
+    const next = new Set(range)
+    if (next.has(hand)) next.delete(hand)
+    else next.add(hand)
+    setCustomRange(gameType, position, [...next])
+  }
 
   function startQuiz() {
     setMode('quiz')
@@ -92,6 +106,16 @@ export function RangeTrainer() {
               }`}
             >
               View Range
+            </button>
+            <button
+              onClick={() => setMode('edit')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                mode === 'edit'
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:text-gray-100'
+              }`}
+            >
+              Edit Range
             </button>
             <button
               onClick={startQuiz}
@@ -184,8 +208,9 @@ export function RangeTrainer() {
         {/* Matrix */}
         <div>
           <HandMatrix
-            highlighted={mode === 'view' || (feedback && !feedback.correct) ? range : undefined}
+            highlighted={mode === 'view' || mode === 'edit' || (feedback && !feedback.correct) ? range : undefined}
             activeHand={mode === 'quiz' ? quizHand : null}
+            onCellClick={mode === 'edit' ? handleCellClick : undefined}
           />
           <div className="px-4 sm:px-0 flex flex-wrap gap-3 mt-3 text-xs text-gray-500">
             <span className="flex items-center gap-1.5">
@@ -254,11 +279,42 @@ export function RangeTrainer() {
           </div>
         )}
 
+        {/* Edit mode panel */}
+        {mode === 'edit' && (
+          <div className="px-4 sm:px-0 w-full xl:flex-1 xl:max-w-sm">
+            <div className="bg-gray-900 rounded-xl p-6 border border-orange-900">
+              <h3 className="font-semibold text-gray-100 mb-1">
+                Editing {position} Range
+                {isCustomized && <span className="ml-2 text-xs text-orange-400 font-normal">custom</span>}
+              </h3>
+              <p className="text-sm text-gray-400 mb-4">
+                <strong className="text-orange-400">{range.size} hands</strong>
+                <span className="text-gray-600"> ({Math.round((range.size / 169) * 100)}%)</span>
+              </p>
+              <p className="text-xs text-gray-500 mb-5">
+                Click any hand on the matrix to add or remove it from this range.
+                Changes are saved automatically.
+              </p>
+              {isCustomized && (
+                <button
+                  onClick={() => resetRange(gameType, position)}
+                  className="w-full py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-colors border border-gray-700"
+                >
+                  Reset to default
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* View mode info panel */}
         {mode === 'view' && (
           <div className="px-4 sm:px-0 w-full xl:flex-1 xl:max-w-sm">
             <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-              <h3 className="font-semibold text-gray-100 mb-3">{position} Range — {GAME_LABELS[gameType]}</h3>
+              <h3 className="font-semibold text-gray-100 mb-3">
+                {position} Range — {GAME_LABELS[gameType]}
+                {isCustomized && <span className="ml-2 text-xs text-orange-400 font-normal">custom</span>}
+              </h3>
               <p className="text-sm text-gray-400 mb-4">
                 From {position}, you open-raise <strong className="text-green-400">{range.size} hand combos</strong> ({Math.round((range.size / 169) * 100)}% of hands).
               </p>
