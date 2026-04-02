@@ -420,8 +420,8 @@ export function RangeVsRange() {
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-4">Results</p>
           <div className="space-y-3">
             {([
-              { label: 'Range 1', val: result.r1, ...RANGE_COLORS[0] },
-              { label: 'Range 2', val: result.r2, ...RANGE_COLORS[1] },
+              { val: result.r1, ...RANGE_COLORS[0] },
+              { val: result.r2, ...RANGE_COLORS[1] },
             ] as const).map(({ label, val, text, bar }) => (
               <div key={label}>
                 <div className="flex justify-between items-baseline mb-1.5">
